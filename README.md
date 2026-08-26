@@ -52,44 +52,25 @@ The warehouse is designed to support questions such as:
 
 # Data Architecture
 
+The project follows a layered data warehouse architecture:
+
 ```text
-                    SOURCE FILES
-
-
-
-                 BRONZE / RAW
-                Raw source data
-                Ingestion logs
-
-
-
-
-                SILVER / STAGING
-                Data cleaning
-                Standardization
-                Deduplication
-                Data validation
-
-
-
-
-                   GOLD / DWH
-                Dimensions/Facts
-                Star Schema
-
-
-
-
-                   DATA MART
-               Sales vs Target
-               Distributor KPI
-
-
-
-                    POWER BI
-```
-
----
+Source Files
+    │
+    ▼
+Bronze / Raw
+Raw data + ingestion metadata
+    │
+    ▼
+Silver / Staging
+Cleaning + standardization + validation
+    │
+    ▼
+Gold / Data Warehouse
+Dimensions + Facts + Star Schema
+    │
+    ▼
+Power BI
 
 # Dataset Description
 
