@@ -1,634 +1,523 @@
-# Sales Data Warehouse & Analytics
+# Sales Data Warehouse | SQL & Python
 
-**PostgreSQL • Python • SQL • Power BI**
+A portfolio data warehouse project that transforms raw sales data into a structured analytical data warehouse using SQL and Python.
 
-An end-to-end sales data warehouse and analytics project that transforms raw operational data into structured analytical datasets using a **Bronze → Silver → Gold** architecture.
+**Author:** Nguyen Anh Thu  
+**Tools Used:** PostgreSQL, SQL, Python, Pandas, SQLAlchemy, Git/GitHub  
+**Project Type:** Data Warehouse / ELT / Analytics Engineering
 
-The project covers data ingestion, data profiling, data cleaning, dimensional modeling, SCD Type 1 / Type 2, SQL transformation, data marts, and Power BI reporting.
+---
 
 ## Table of Contents
 
-1. [ Background & Overview](#-background--overview)
-2. [ Data Architecture](#-data-architecture)
-3. [ Dataset Description](#-dataset-description)
-4. [ Data Pipeline](#-data-pipeline)
-5. [ Silver Layer — Data Cleaning](#-silver-layer--data-cleaning)
-6. [ Gold Layer — Data Warehouse](#-gold-layer--data-warehouse)
-7. [ Fact & Dimension Tables](#-fact--dimension-tables)
-8. [ Analytics & Power BI](#-analytics--power-bi)
-9. [ Tools & Technologies](#-tools--technologies)
-10. [ Repository Structure](#-repository-structure)
-11. [ Security](#-security)
-12. [ Key Takeaways](#-key-takeaways)
+- [Background & Overview](#background--overview)
+- [Dataset Description & Data Structure](#dataset-description--data-structure)
+- [Main Process](#main-process)
+- [Final Conclusion & Recommendations](#final-conclusion--recommendations)
 
 ---
 
-# Background & Overview
+## Background & Overview
 
-## Objective
+### Objective
 
-The objective of this project is to build a structured **Sales Data Warehouse** that transforms raw operational data into reliable analytical datasets for business reporting and decision-making.
+This project builds a sales data warehouse that transforms raw operational data into a clean and structured analytical model.
 
-The project follows an end-to-end workflow:
+The objective is to create a reliable data foundation for sales performance, customer, product, employee, distributor, target, and return analysis.
 
-```text
-Raw Data → Bronze → Silver → Gold → Data Mart → Power BI
-```
+### What is this project about? What Business Question will it solve?
 
-## Business Questions
+This project simulates a real-world data warehouse workflow, from raw data ingestion to analytical-ready tables.
 
-The warehouse is designed to support questions such as:
+The project aims to:
 
-- How are sales performing over time?
-- Which employees generate the most revenue?
+- Load raw CSV and Excel files into PostgreSQL.
+- Organize data into Raw, Staging, and Gold layers.
+- Profile and identify data quality issues.
+- Clean and standardize data before analytical use.
+- Build dimensional and fact tables using a Star Schema.
+- Apply SCD Type 2 to dimensions where historical changes need to be preserved.
+- Create analytical-ready fact tables for sales, returns, distributor orders, and targets.
+
+The warehouse is designed to support business questions such as:
+
+- How is sales performance changing over time?
+- Which products and categories generate the most revenue?
+- Which customers contribute the most sales?
 - How does actual sales performance compare with targets?
-- Which products and categories contribute the most revenue?
-- How are customers distributed across loyalty tiers?
-- How are distributors performing?
-- What is the impact of returned products?
-- How can historical employee and distributor changes be reflected in reporting?
+- Which employees and distributors perform best?
+- What are the main return patterns?
+- How well are distributor orders fulfilled and delivered on time?
+
+### Who is this project for?
+
+- Data Analysts
+- Business Analysts
+- Data Engineers
+- Analytics Engineers
+- Sales Operations teams
+- Business decision-makers and stakeholders
 
 ---
 
-# Data Architecture
+## Dataset Description & Data Structure
 
-The project follows a layered data warehouse architecture:
+### Data Source
 
-```text
-Source Files
-    │
-    ▼
-Bronze / Raw
-Raw data + ingestion metadata
-    │
-    ▼
-Silver / Staging
-Cleaning + standardization + validation
-    │
-    ▼
-Gold / Data Warehouse
-Dimensions + Facts + Star Schema
-    │
-    ▼
-Power BI
+The project uses simulated business data representing a sales and distribution organization.
 
-# Dataset Description
+The raw data consists of CSV and Excel files representing different operational business entities.
 
-The project uses source datasets representing:
+- **Source:** Simulated business dataset
+- **Database:** PostgreSQL
+- **Raw data format:** CSV and XLSX
+- **Processing languages:** SQL and Python
+- **Target architecture:** Layered Data Warehouse
 
-- Sales transactions
-- Sales targets
-- Customer master
-- Product master
-- Employee master
-- Distributor information
-- Distributor orders
-- Return transactions
-- Promotion information
-- Territory mapping
+### Data Layers
 
-Source data is first loaded into the **Bronze / Raw** layer before being transformed into Silver and Gold.
-
----
-
-# Data Pipeline
-
-## 1⃣ Bronze Layer
-
-The Bronze layer stores source data with minimal transformation.
-
-### Main responsibilities
-
-- Load source files into PostgreSQL
-- Preserve source information
-- Add ingestion metadata
-- Track pipeline batches
-- Maintain raw data for traceability
-
-Typical metadata:
-
-```text
-_source_file
-_source_platform
-_ingested_at
-_batch_id
-```
-
----
-
-# Silver Layer — Data Cleaning
-
-The Silver layer transforms raw source data into cleaner and more consistent datasets.
-
-### Data Type Standardization
-
-- Convert text dates into `DATE`
-- Convert numeric fields into appropriate numeric types
-- Standardize text fields
-
-### Data Cleaning
-
-- Trim unnecessary spaces
-- Handle NULL values
-- Standardize categorical values
-- Remove duplicate records
-- Normalize business keys
-
-### Data Validation
-
-- Duplicate business keys
-- Missing values
-- Invalid dates
-- Invalid numeric values
-- Referential integrity
-
----
-
-# Gold Layer — Data Warehouse
-
-The Gold layer implements a **Star Schema** consisting of dimension tables, fact tables, and analytical marts.
-
-```text
-                         dim_date
-
-
-dim_customers  fact_sales  dim_products
-
-
-                     dim_employees
-
-
-                    dim_distributors
-```
-
----
-
-# Fact & Dimension Tables
-
-| Table | Type | Purpose | SCD |
-|---|---|---|---|
-| `dim_date` | Dimension | Calendar: day, week, month, quarter, year, FY | Static |
-| `dim_employees` | Dimension | Employee information and historical changes | Type 2 |
-| `dim_customers` | Dimension | Customer information and loyalty tier | Type 1 |
-| `dim_products` | Dimension | Product, category and cost information | Type 1 |
-| `dim_distributors` | Dimension | Distributor information, level and channel | Type 2 |
-| `fact_sales` | Fact | Sales transactions | 1 line item |
-| `fact_targets` | Fact | Employee/month/version targets | Temporal |
-| `fact_returns` | Fact | Returned products | — |
-| `fact_distributor_orders` | Fact | Distributor orders and delivery performance | — |
-| `mart_sales_vs_target` | Mart | Actual vs target by month | — |
-| `mart_distributor_performance` | Mart | Distributor performance | — |
-
----
-
-# `dim_date`
-
-The `dim_date` table is the central calendar dimension.
-
-Key attributes include:
-
-```text
-date_key
-date_day
-day
-week
-month
-month_name
-quarter
-year
-fiscal_year
-```
-
-The calendar supports daily, weekly, monthly, quarterly, and fiscal-year analysis.
-
----
-
-# `dim_employees`
-
-`dim_employees` uses **SCD Type 2** to preserve employee history.
-
-When an employee changes attributes such as region or team, the previous record is not overwritten.
-
-```text
-Old record
-effective_to = change date - 1
-
-New record
-effective_from = change date
-```
-
-When joining employee information to a fact table, the transaction date is used to identify the correct historical version:
-
-```sql
-ON emp.employee_id = fact.employee_id
-AND fact.date BETWEEN emp.effective_from
-                  AND emp.effective_to
-```
-
----
-
-# `dim_customers`
-
-`dim_customers` stores customer information used for sales analysis.
-
-Typical attributes:
-
-```text
-customer_key
-customer_id
-customer_name
-customer_type
-loyalty_tier
-join_date
-```
-
-The dimension follows **SCD Type 1**, meaning updates overwrite previous attribute values.
-
----
-
-# `dim_products`
-
-`dim_products` stores product information.
-
-Typical attributes:
-
-```text
-product_key
-product_id
-product_name
-category
-sub_category
-unit
-unit_price
-cost_price
-status
-launch_date
-```
-
----
-
-# `dim_distributors`
-
-`dim_distributors` stores distributor information and historical changes.
-
-Typical attributes:
-
-```text
-distributor_key
-distributor_id
-distributor_name
-distributor_level
-channel
-effective_from
-effective_to
-is_current
-```
-
-The dimension uses **SCD Type 2**.
-
----
-
-# `fact_sales`
-
-`fact_sales` stores sales transactions at:
-
-> **1 line item = 1 fact row**
-
-Typical fields:
-
-```text
-sales_key
-date_key
-employee_key
-customer_key
-product_key
-distributor_key
-quantity
-unit_price
-sales_amount
-```
-
----
-
-# `fact_targets`
-
-`fact_targets` stores sales targets by:
-
-```text
-Employee
-Month
-Plan Version
-```
-
-Typical fields:
-
-```text
-target_key
-date_key
-employee_key
-plan_version
-version_date
-target_revenue
-target_quantity
-target_new_customers
-is_latest_flag
-```
-
-The current implementation links target records to the calendar dimension using target year and month:
-
-```sql
-LEFT JOIN dwh.dim_date d
-       ON t.year = d.year
-      AND t.month = d.month
-```
-
-The business grain is:
-
-> **1 employee × 1 month × 1 plan version**
-
-A future refinement is to use the **start of month** when linking monthly targets to the daily calendar dimension, so each monthly target maps to a single calendar date.
-
----
-
-# `fact_returns`
-
-`fact_returns` stores returned product transactions.
-
-Typical fields:
-
-```text
-return_id
-original_order_id
-date_key
-customer_key
-employee_key
-product_key
-return_quantity
-unit_price
-return_amount
-return_reason
-status
-```
-
----
-
-# `fact_distributor_orders`
-
-`fact_distributor_orders` tracks distributor orders and delivery performance.
-
-Key measures include:
-
-```text
-distributor_order_key
-date_key
-distributor_key
-order_id
-product_id
-qty_ordered
-qty_delivered
-fill_rate_pct
-gross_amount
-delivered_amount
-ontime_delivery
-delivery_status
-payment_terms
-```
-
----
-
-# `mart_sales_vs_target`
-
-`mart_sales_vs_target` compares actual sales performance against sales targets.
-
-Typical metrics:
-
-```text
-Actual Sales
-Target Sales
-Achievement Rate
-```
-
-```text
-Achievement Rate =
-Actual Sales / Target Sales
-```
-
-This mart supports Power BI reporting and helps identify employees exceeding or falling below targets.
-
----
-
-# `mart_distributor_performance`
-
-The distributor performance mart provides aggregated distributor KPIs, including:
-
-- Total orders
-- Quantity ordered
-- Quantity delivered
-- Fill rate
-- Gross order value
-- Delivered value
-- On-time delivery rate
-
----
-
-# Analytics & Power BI
-
-The Gold and Mart layers provide analytical datasets for Power BI.
-
-### Sales Performance
-
-- Total Revenue
-- Sales Quantity
-- Monthly Sales
-- Sales by Employee
-- Sales by Product
-- Sales by Category
-- Sales by Customer
-
-### Target Performance
-
-- Actual Sales
-- Target Sales
-- Achievement Rate
-- Monthly Target Performance
-- Employee Performance
-
-### Customer Analytics
-
-- Customer distribution
-- Loyalty tier
-- Customer sales contribution
-
-### Product Analytics
-
-- Revenue by product
-- Revenue by category
-- Product quantity
-- Product profitability
-
-### Distributor Analytics
-
-- Order quantity
-- Delivery quantity
-- Fill rate
-- On-time delivery
-- Distributor revenue
-
----
-
-# Tools & Technologies
-
-| Tool | Purpose |
-|---|---|
-| **Python** | Data ingestion and pipeline automation |
-| **PostgreSQL** | Data warehouse database |
-| **SQL** | Data transformation and analytics |
-| **Power BI** | Dashboard and business reporting |
-| **Git / GitHub** | Version control and portfolio management |
-
----
-
-# Repository Structure
-
-```text
-sales-data-warehouse/
-
- README.md
- .gitignore
-
- 00_setup/
-    .env.example
-    init_db.sql
-    requirements.txt
-
- 01_ingestion/
-    loaders/
-    connectors/
-    utils/
-
- 02_sql_analytics/
-    01_data_profiling/
-    02_silver/
-    03_tests/
-    04_gold/
-
- 03_power_bi/
-    sales_dashboard.pbix
-
- docs/
-     data_dictionary.md
-     data_issues.md
-     assumptions_log.md
-```
-
----
-
-# Security
-
-Sensitive credentials are not included in this repository.
-
-The following file must remain local:
-
-```text
-.env
-```
-
-Commit only:
-
-```text
-.env.example
-```
-
-Example:
-
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=your_database
-DB_USER=your_username
-DB_PASSWORD=your_password
-```
-
-The actual `.env` file is excluded using `.gitignore`.
-
----
-
-# Data Quality & Validation
-
-### Bronze
-
-- Row count
-- NULL percentage
-- Duplicate records
-- Source file tracking
-
-### Silver
-
-- Data type validation
-- Business key uniqueness
-- Duplicate removal
-- Date validation
-- NULL handling
-
-### Gold
-
-- Primary/surrogate key uniqueness
-- Dimension-to-fact relationships
-- SCD Type 2 validity
-- Referential integrity
-- Fact table grain validation
-
----
-
-# Key Takeaways
-
-This project demonstrates an end-to-end approach to building a sales analytics data warehouse:
+The project follows a layered data architecture:
 
 ```text
 Raw Data
    ↓
-Data Ingestion
+Raw / Bronze Layer
    ↓
-Data Profiling
+Staging / Silver Layer
    ↓
-Data Cleaning
-   ↓
-Silver Layer
-   ↓
-Dimensional Modeling
-   ↓
-Gold Layer
-   ↓
-Data Mart
-   ↓
-Power BI
+Gold / Data Warehouse Layer
 ```
 
-The project demonstrates practical skills in:
+### Raw / Bronze Layer
 
-- Data ingestion
-- Data profiling
-- Data cleaning
-- SQL transformation
-- PostgreSQL
-- Star Schema design
-- Fact and dimension modeling
-- SCD Type 1
-- SCD Type 2
-- Temporal data handling
-- Data marts
-- Business analytics
-- Power BI reporting
-- Git/GitHub version control
+The Raw layer stores data close to the original source files.
 
-The overall goal is to transform raw operational data into a structured analytical data warehouse that supports reliable reporting, business analysis, and decision-making.
+Its main purpose is to:
+
+- Ingest source data.
+- Preserve raw records.
+- Track source information.
+- Store ingestion metadata.
+- Support data lineage and traceability.
+
+### Staging / Silver Layer
+
+The Staging layer prepares the raw data for analytical modeling.
+
+Main transformations include:
+
+- Trimming text values.
+- Standardizing data types.
+- Converting date fields.
+- Handling missing values.
+- Removing duplicate records.
+- Validating business keys.
+- Preparing clean datasets for the Gold layer.
+
+### Gold / Data Warehouse Layer
+
+The Gold layer contains business-oriented analytical tables following a Star Schema.
+
+The main dimensions are:
+
+| Dimension | Purpose | SCD |
+|---|---|---|
+| dim_date | Calendar and time analysis | Static |
+| dim_employees | Employee and organizational attributes | Type 2 |
+| dim_customers | Customer attributes | Type 1 |
+| dim_products | Product and pricing attributes | Type 1 |
+| dim_distributors | Distributor and channel attributes | Type 2 |
+
+The main fact tables are:
+
+| Fact Table | Grain | Purpose |
+|---|---|---|
+| fact_sales | One sales line item | Sales transaction analysis |
+| fact_returns | One return transaction | Return analysis |
+| fact_targets | One employee/month/plan version | Target performance analysis |
+| fact_distributor_orders | One distributor order | Distributor order and delivery analysis |
+
+### Data Structure & Relationships
+
+The Gold layer follows a Star Schema in which fact tables contain business measures and foreign keys to descriptive dimensions.
+
+```text
+                    dim_date
+                       |
+                       |
+dim_customers --- fact_sales --- dim_products
+                       |
+                       |
+                 dim_employees
+
+                    dim_date
+                       |
+                       |
+dim_distributors - fact_distributor_orders - dim_products
+
+                    dim_date
+                       |
+                       |
+                 fact_returns
+                  /    |    \
+                 /     |     \
+       dim_customers dim_products dim_employees
+
+                    dim_date
+                       |
+                       |
+                 fact_targets
+                       |
+                dim_employees
+```
+
+### Table Schema & Data Snapshot
+
+#### dim_date
+
+| Column | Description |
+|---|---|
+| date_key | Surrogate date key |
+| date_day | Calendar date |
+| day | Day number |
+| month | Month number |
+| month_name | Month name |
+| quarter | Quarter |
+| year | Calendar year |
+| week | Week information |
+| fiscal_year | Fiscal year |
+
+The `date_key` provides a consistent key for joining fact tables to the date dimension.
+
+#### dim_employees
+
+| Column | Description |
+|---|---|
+| employee_key | Surrogate key |
+| employee_id | Business employee ID |
+| employee_name | Employee name |
+| region | Employee region |
+| team | Employee team |
+| effective_from | Start date of record validity |
+| effective_to | End date of record validity |
+| is_current | Indicates the current record |
+
+SCD Type 2 is used to preserve historical employee attribute changes.
+
+#### dim_customers
+
+| Column | Description |
+|---|---|
+| customer_key | Surrogate key |
+| customer_id | Business customer ID |
+| customer_name | Customer name |
+| customer_type | Customer classification |
+| loyalty_tier | Customer loyalty level |
+| join_date | Customer joining date |
+| status | Customer status |
+
+#### dim_products
+
+| Column | Description |
+|---|---|
+| product_key | Surrogate key |
+| product_id | Business product ID |
+| product_name | Product name |
+| category | Product category |
+| sub_category | Product sub-category |
+| unit | Product unit |
+| unit_price | Selling price |
+| cost_price | Product cost |
+| status | Product status |
+| launch_date | Product launch date |
+
+#### dim_distributors
+
+| Column | Description |
+|---|---|
+| distributor_key | Surrogate key |
+| distributor_id | Business distributor ID |
+| distributor_name | Distributor name |
+| distributor_level | Distributor classification |
+| channel | Distribution channel |
+| effective_from | Start date of record validity |
+| effective_to | End date of record validity |
+| is_current | Indicates the current record |
+
+SCD Type 2 is used where historical distributor changes need to be preserved.
+
+#### fact_sales
+
+**Grain: One row = one sales line item**
+
+| Column | Description |
+|---|---|
+| sales_key | Surrogate transaction key |
+| date_key | Date dimension key |
+| employee_key | Employee dimension key |
+| customer_key | Customer dimension key |
+| product_key | Product dimension key |
+| order_id | Business order ID |
+| quantity | Quantity sold |
+| unit_price | Selling price |
+| sales_amount | Sales revenue |
+| cost_amount | Cost amount |
+| profit_amount | Profit |
+
+#### fact_returns
+
+**Grain: One row = one return transaction**
+
+| Column | Description |
+|---|---|
+| return_id | Return transaction ID |
+| original_order_id | Original sales order |
+| date_key | Return date key |
+| customer_key | Customer dimension key |
+| employee_key | Employee dimension key |
+| product_key | Product dimension key |
+| return_quantity | Returned quantity |
+| unit_price | Unit price |
+| return_amount | Return value |
+| return_reason | Reason for return |
+| status | Return status |
+
+#### fact_targets
+
+**Grain: One row = one employee/month/plan version**
+
+| Column | Description |
+|---|---|
+| target_key | Surrogate target key |
+| date_key | Monthly date key |
+| employee_key | Employee dimension key |
+| plan_version | Target plan version |
+| version_date | Version date |
+| target_revenue | Revenue target |
+| target_quantity | Quantity target |
+| target_new_customers | New customer target |
+| is_latest_flag | Latest plan indicator |
+
+#### fact_distributor_orders
+
+**Grain: One row = one distributor order**
+
+| Column | Description |
+|---|---|
+| distributor_order_key | Surrogate order key |
+| date_key | Order date key |
+| distributor_key | Distributor dimension key |
+| order_id | Business order ID |
+| product_id | Product ID |
+| product_category | Product category |
+| qty_ordered | Ordered quantity |
+| qty_delivered | Delivered quantity |
+| fill_rate_pct | Order fulfillment rate |
+| unit_price_list | List price |
+| distributor_price | Distributor price |
+| gross_amount | Gross order value |
+| delivered_amount | Delivered order value |
+| expected_delivery_date | Expected delivery date |
+| actual_delivery_date | Actual delivery date |
+| ontime_delivery | On-time delivery indicator |
+| delivery_status | Delivery status |
+| payment_terms | Payment terms |
 
 ---
 
-## ‍ Author
+## Main Process
 
-**Nguyễn Anh Thư**
+### Data Ingestion
 
-Data Analyst Portfolio Project
+Python is used to read the source CSV and Excel files and load them into PostgreSQL.
 
-**Skills:** SQL • Python • PostgreSQL • Power BI • Data Warehousing
+The ingestion process keeps the original data available in the Raw layer before business transformations are applied.
+
+The process includes:
+
+- Reading CSV and Excel files.
+- Loading data into PostgreSQL.
+- Adding ingestion metadata.
+- Tracking source and batch information.
+
+### Data Profiling
+
+The raw datasets are profiled before transformation to identify potential data quality issues.
+
+The profiling checks:
+
+- Total row counts.
+- NULL values.
+- Duplicate records.
+- Data types.
+- Missing business keys.
+- Date fields.
+- Potential data quality issues.
+
+This step helps identify problems before creating analytical tables.
+
+### Data Cleaning & Transformation
+
+The Staging layer applies SQL transformations to prepare clean datasets.
+
+The main transformations include:
+
+- Trimming text values.
+- Standardizing data types.
+- Converting text dates into DATE fields.
+- Handling missing values.
+- Removing duplicates.
+- Validating business keys.
+- Preparing standardized staging tables.
+
+### Dimensional Modeling
+
+The cleaned staging data is transformed into a Star Schema.
+
+The modeling process includes:
+
+- Creating dimension tables.
+- Creating surrogate keys.
+- Creating fact tables.
+- Defining the grain of each fact table.
+- Establishing relationships between facts and dimensions.
+- Applying SCD Type 1 or Type 2 depending on the business requirement.
+
+### Surrogate Keys
+
+Surrogate keys are used in the Gold layer to provide stable warehouse identifiers.
+
+For example:
+
+```text
+Business Key
+employee_id
+      ↓
+dim_employees
+      ↓
+employee_key
+```
+
+Fact tables use surrogate keys when connecting to dimensions.
+
+### Slowly Changing Dimensions
+
+SCD Type 2 is used when historical changes need to be preserved.
+
+For example:
+
+```text
+Employee 101
+Region A
+01/01/2025 → 30/06/2025
+
+Employee 101
+Region B
+01/07/2025 → Current
+```
+
+Instead of overwriting the previous value, both versions are retained.
+
+The validity period is represented by:
+
+- `effective_from`
+- `effective_to`
+- `is_current`
+
+This allows historical transactions to be analyzed using the attributes that were valid at the time of the transaction.
+
+### Fact Table Construction
+
+Fact tables are created after the dimensions are available.
+
+Fact records are connected to dimensions through surrogate keys such as:
+
+```text
+date_key
+employee_key
+customer_key
+product_key
+distributor_key
+```
+
+Business measures are stored in the fact tables, including:
+
+```text
+quantity
+sales_amount
+profit_amount
+return_amount
+target_revenue
+qty_ordered
+qty_delivered
+```
+
+### Analytical Use Cases
+
+The resulting warehouse can support:
+
+**Sales Performance**
+
+- Revenue by month.
+- Revenue by product.
+- Revenue by customer.
+- Revenue by employee.
+- Quantity sold.
+- Profit performance.
+
+**Sales vs Target**
+
+- Actual revenue.
+- Target revenue.
+- Achievement percentage.
+- Target variance.
+
+**Customer Analysis**
+
+- Customer contribution.
+- Customer segmentation.
+- Loyalty tier analysis.
+- Customer revenue.
+
+**Product Analysis**
+
+- Product sales.
+- Category performance.
+- Revenue contribution.
+- Product profitability.
+
+**Distributor Analysis**
+
+- Distributor order volume.
+- Fill rate.
+- Delivered amount.
+- On-time delivery.
+- Distributor performance.
+
+**Return Analysis**
+
+- Return quantity.
+- Return amount.
+- Return reasons.
+- Returns by product.
+- Returns by customer.
+- Returns by employee.
+
+---
+
+## Final Conclusion & Recommendations
+
+This project demonstrates how raw operational data can be transformed into a structured data warehouse suitable for business analytics.
+
+### Key Takeaways
+
+- Use a layered Raw → Staging → Gold architecture to separate ingestion, transformation, and analytical modeling.
+- Use a Star Schema to make business analysis easier and more consistent.
+- Use surrogate keys to establish stable relationships between fact and dimension tables.
+- Apply SCD Type 2 when historical dimension changes need to be preserved.
+- Define the grain of each fact table before building the model.
+- Perform data profiling and quality checks before creating analytical tables.
+- Keep ingestion metadata primarily in the Raw layer for data lineage and traceability.
+- Keep the Gold layer focused on business-oriented analytical data.
+
+The resulting warehouse provides a foundation for future SQL analysis, reporting, and BI dashboards.
